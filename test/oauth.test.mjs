@@ -19,6 +19,7 @@ import {
   exchangeCode,
   refreshAccessToken,
   revokeRefreshToken,
+  extractTokenResources,
 } from '../lib/oauth.js';
 import { startCallbackServer } from '../lib/callback-server.js';
 import { VERIFIER_CHARSET } from '../lib/constants.js';
@@ -265,4 +266,42 @@ test('MCP stream：无 token → 401 + resource_metadata 响应头；带 token �
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize' }),
   });
   assert.equal(res200.status, 200);
+});
+
+/* ─────────── extractTokenResources：按 token 授权范围动态配置（history 门槛） ─────────── */
+
+function makeJwt(payload) {
+  const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  return `${header}.${body}.sig`;
+}
+
+test('extractTokenResources：企业认证 token（resource 含 history）→ 返回 6 个', () => {
+  const urls = ['company', 'risk', 'ipr', 'operation', 'history', 'executive'].map(
+    (s) => `https://agent.qcc.com/mcp/${s}/stream`,
+  );
+  const jwt = makeJwt({ resource: urls });
+  const result = extractTokenResources(jwt);
+  assert.deepEqual(result, urls);
+  assert.ok(result.includes('https://agent.qcc.com/mcp/history/stream'));
+});
+
+test('extractTokenResources：个人账号 token（resource 不含 history）→ 返回 5 个', () => {
+  const urls = ['company', 'risk', 'ipr', 'operation', 'executive'].map(
+    (s) => `https://agent.qcc.com/mcp/${s}/stream`,
+  );
+  const jwt = makeJwt({ resource: urls });
+  const result = extractTokenResources(jwt);
+  assert.equal(result.length, 5);
+  assert.equal(result.includes('https://agent.qcc.com/mcp/history/stream'), false);
+});
+
+test('extractTokenResources：非 JWT token → null（fallback 全量）', () => {
+  assert.equal(extractTokenResources('mock-at-abc123'), null);
+  assert.equal(extractTokenResources('not-a-jwt-at-all'), null);
+});
+
+test('extractTokenResources：JWT 无 resource claim → null', () => {
+  const jwt = makeJwt({ scope: 'mcp:tools', client_name: 'x' });
+  assert.equal(extractTokenResources(jwt), null);
 });

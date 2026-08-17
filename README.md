@@ -8,7 +8,7 @@
 ## 功能 / Features
 
 - 🔑 **一键 OAuth 连接**：`Authorization Code + PKCE(S256)`，动态注册客户端（无 client_secret），自动打开浏览器跳转企查查授权页，loopback 回调自动完成
-- 🌐 **一次授权、全 Server 可用**：一份 `access_token` / `refresh_token` 覆盖企查查 OAuth 集合内全部 MCP Server（company / risk / ipr / operation / executive）
+- 🌐 **一次授权、全 Server 可用**：一份 `access_token` / `refresh_token` 覆盖企查查 MCP 企业数据 SERVER（company / risk / ipr / operation / **history** / executive，共 6 个）；`history`（历史信息）需企业认证，插件按 token 实际授权范围动态挂载——企业认证账号 6 个、个人账号 5 个
 - 🔄 **自动刷新**：access_token 过期前自动 refresh（token 轮换），失败才需要重新授权
 - 💾 **安全持久化**：token 存储于 DSH 存储域（`~/.dsh/storages`，目录 0700），重启 Host 自动恢复连接
 - 🛠 **对话即管理**：内置 `qcc_oauth_connect` / `qcc_oauth_status` / `qcc_oauth_disconnect` 三个工具
@@ -91,7 +91,7 @@ dsh plugin --profile web add "link:$(pwd)"      # 或 pnpm add "file:$(pwd)"
 1. 发现 MCP Protected Resource Metadata → 2. 发现 OAuth Server Metadata（endpoint 全部动态读取，不硬编码）
 3. 动态注册客户端（`client_id`，90 天自动续期）→ 4. 打开授权页（`scope=mcp:tools`）
 5. loopback 回调校验 `state` → 6. 授权码 + `code_verifier` 换 token
-7. 通过 `ctx.loader` 为 5 个 `@deepseek-ai/dsh-mcp-client` 条目注入 Bearer header → 8. 过期前自动刷新（轮换）
+7. 解析 token 实际授权的 resource（JWT claim），通过 `ctx.loader` 为授权的 `@deepseek-ai/dsh-mcp-client` 条目注入 Bearer header（企业认证 6 个 / 个人 5 个）→ 8. 过期前自动刷新（轮换）
 
 详见 [`docs/OAUTH-IMPLEMENTATION.md`](docs/OAUTH-IMPLEMENTATION.md)。
 
@@ -124,7 +124,8 @@ dsh plugin --profile web add "link:$(pwd)"      # 或 pnpm add "file:$(pwd)"
 
 ## 已知限制 / Limitations
 
-- 企查查 OAuth 集合当前为 5 个 resource（company/risk/ipr/operation/executive）；history / legal-regulation / legal-case / tender 不在文档集合内（如有需要请与企查查确认后扩展 `resources` 配置）
+- 插件默认管理 6 个企业数据 SERVER（company/risk/ipr/operation/history/executive）；`history`（历史信息）需企业认证后 token 才授权，插件按 token 实际授权范围动态挂载（企业认证 6 个 / 个人 5 个）
+- 非企业 SERVER（regulation 法规 / case 案例 / legal 法律 / tender 标讯 / document 文档解析）不在本插件默认管理范围内，如有需要请与企查查确认后扩展 `resources` 配置
 - 第三方插件无法注册 DSH 设置页卡片（apiproxy allowlist 限制），管理入口为对话工具
 - 回调使用本地 loopback 地址，适用于桌面端；SaaS/Web 回调地址需提前与企查查确认白名单
 

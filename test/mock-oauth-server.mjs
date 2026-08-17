@@ -13,7 +13,7 @@ import { createServer } from 'node:http';
 import { createHash, randomBytes } from 'node:crypto';
 
 const SCOPES = ['mcp:tools'];
-const RESOURCES = ['company', 'risk', 'ipr', 'operation', 'executive'];
+const RESOURCES = ['company', 'risk', 'ipr', 'operation', 'history', 'executive'];
 
 function json(res, status, body, extraHeaders = {}) {
   res.writeHead(status, { 'Content-Type': 'application/json', ...extraHeaders });
@@ -36,7 +36,12 @@ function readBody(req) {
   });
 }
 
-export function createMockQccServer({ expiresIn = 3600 } = {}) {
+/**
+ * @param {object} [options]
+ * @param {number} [options.expiresIn=3600]
+ * @param {string[]} [options.tokenResources] 若提供，签发的 access_token 为带 resource claim 的 JWT（值传 server key 数组，如 ['company','risk',...]，模拟企业认证授权范围）
+ */
+export function createMockQccServer({ expiresIn = 3600, tokenResources } = {}) {
   const state = {
     clientId: 'wb_dyn_mock_0001',
     registered: null,             // { clientName, redirectUris, grantTypes, responseTypes }
@@ -44,6 +49,19 @@ export function createMockQccServer({ expiresIn = 3600 } = {}) {
     refreshTokens: new Map(),     // refreshToken -> { accessToken, clientId, expiresIn }
     revokedRefresh: new Set(),
     expiresIn,
+    tokenResources,
+  };
+
+  /** 生成 access_token：tokenResources（server key 数组）提供时为 JWT（payload.resource），否则为普通字符串 */
+  const makeAccessToken = () => {
+    if (tokenResources) {
+      const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+      const payload = Buffer.from(
+        JSON.stringify({ client_name: 'DeepSeek Harness - QCC MCP', scope: 'mcp:tools', resource: tokenResources.map((r) => `${base}/mcp/${r}/stream`) }),
+      ).toString('base64url');
+      return `${header}.${payload}.mock-signature`;
+    }
+    return `mock-at-${randomBytes(12).toString('hex')}`;
   };
   let base = ''; // 实际监听端口确定后填充
 
@@ -151,7 +169,7 @@ export function createMockQccServer({ expiresIn = 3600 } = {}) {
         if (!verifier || sha256b64url(verifier) !== record.challenge) return oauthError(res, 'invalid_grant', 'PKCE verification failed');
         record.used = true;
         const refreshToken = randomBytes(24).toString('base64url');
-        const accessToken = `mock-at-${randomBytes(12).toString('hex')}`;
+        const accessToken = makeAccessToken();
         state.refreshTokens.set(refreshToken, { accessToken, clientId: record.clientId, expiresIn: state.expiresIn });
         return json(res, 200, {
           access_token: accessToken,
@@ -170,7 +188,7 @@ export function createMockQccServer({ expiresIn = 3600 } = {}) {
         // 轮换：作废旧 refresh token，签发新的一对（文档 §12.1）
         state.refreshTokens.delete(refreshToken);
         const newRefreshToken = randomBytes(24).toString('base64url');
-        const accessToken = `mock-at-${randomBytes(12).toString('hex')}`;
+        const accessToken = makeAccessToken();
         state.refreshTokens.set(newRefreshToken, { accessToken, clientId: record.clientId, expiresIn: state.expiresIn });
         return json(res, 200, {
           access_token: accessToken,

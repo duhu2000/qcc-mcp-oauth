@@ -1,7 +1,7 @@
 /**
  * 插件级集成测试：用伪 cordis 上下文 + mock OAuth 服务器，验证插件完整逻辑
  *   - 一键连接（OAuth 全流程，自动模拟用户点击授权）
- *   - 授权持久化（storage 表）与 5 个 mcp-client 条目创建（Bearer header）
+ *   - 授权持久化（storage 表）与 6 个 mcp-client 条目创建（Bearer header）
  *   - 重复连接幂等复用（不重新弹授权）
  *   - access_token 过期自动刷新（token 轮换 + 条目更新）
  *   - 断开：revoke + 清除 grant + 停用条目
@@ -129,7 +129,7 @@ after(async () => {
   await mock.close();
 });
 
-test('一键连接：OAuth 全流程 → 持久化 + 创建 5 个 mcp-client 条目 + 注册 3 个工具', SKIP, async () => {
+test('一键连接：OAuth 全流程 → 持久化 + 创建 6 个 mcp-client 条目 + 注册 3 个工具', SKIP, async () => {
   const { ctx, tools, created, tableStore, logs } = createFakeCtx(new Map());
   await plugin.apply(ctx, config);
 
@@ -140,23 +140,23 @@ test('一键连接：OAuth 全流程 → 持久化 + 创建 5 个 mcp-client 条
   const result = await promise;
 
   assert.equal(result.ok, true, result.message);
-  assert.equal(result.detail.entries.length, 5);
+  assert.equal(result.detail.entries.length, 6);
 
-  // 5 个 mcp-client 条目，均带 Bearer header
-  assert.equal(created.length, 5);
+  // 6 个 mcp-client 条目，均带 Bearer header
+  assert.equal(created.length, 6);
   for (const entry of created) {
     assert.equal(entry.name, '@deepseek-ai/dsh-mcp-client');
     assert.equal(entry.disabled, false);
     assert.match(entry.config.headers.Authorization, /^Bearer mock-at-/);
     assert.equal(entry.config.transport, 'streamable-http');
   }
-  assert.deepEqual(created.map((e) => e.config.serverName).sort(), ['company', 'executive', 'ipr', 'operation', 'risk']);
+  assert.deepEqual(created.map((e) => e.config.serverName).sort(), ['company', 'executive', 'history', 'ipr', 'operation', 'risk']);
 
   // grant 已持久化
   const grant = tableStore.get('grant:test');
   assert.ok(grant);
   assert.equal(grant.issuer, mock.base);
-  assert.equal(grant.authorizedResources.length, 5);
+  assert.equal(grant.authorizedResources.length, 6);
   assert.ok(grant.refreshToken);
 
   // 3 个工具已注册
@@ -166,7 +166,7 @@ test('一键连接：OAuth 全流程 → 持久化 + 创建 5 个 mcp-client 条
   const status = findTool(tools, 'qcc_oauth_status');
   const statusResult = await status.execute({}, exec);
   assert.equal(statusResult.detail.connected, true);
-  assert.equal(statusResult.detail.authorizedResources.length, 5);
+  assert.equal(statusResult.detail.authorizedResources.length, 6);
   assert.equal(logs.some(([, m]) => m.includes('openBrowser disabled')), true);
 });
 
@@ -180,13 +180,13 @@ test('重复连接幂等：复用现有授权，不重复创建条目', SKIP, as
   await autoApprove(ctx);
   const r1 = await first;
   assert.equal(r1.ok, true);
-  assert.equal(created.length, 5);
+  assert.equal(created.length, 6);
 
   // 第二次连接：立即复用（不弹授权）
   const r2 = await connect.execute({}, exec);
   assert.equal(r2.ok, true);
   assert.equal(r2.detail.reused, true);
-  assert.equal(created.length, 5, '不应重复创建条目');
+  assert.equal(created.length, 6, '不应重复创建条目');
 });
 
 test('access_token 过期自动刷新：token 轮换 + 条目更新', SKIP, async () => {
@@ -237,7 +237,7 @@ test('断开：revoke + 清除 grant + 停用条目', SKIP, async () => {
   assert.equal(tableStore.get('grant:test'), undefined);
   // 条目已停用（disabled: true）
   const disabledUpdates = updated.filter(([id, opts]) => id.startsWith('mcp-qcc-') && opts.disabled === true);
-  assert.equal(disabledUpdates.length, 5);
+  assert.equal(disabledUpdates.length, 6);
 
   // 断开后重新连接 → 重新走完整授权（grant 已删）；清空旧日志避免误用第一次的授权 URL
   logs.length = 0;
@@ -263,7 +263,7 @@ test('重启恢复：storage 中有 grant 时 apply 自动恢复连接（无需�
   const second = createFakeCtx(tableStore);
   await plugin.apply(second.ctx, config);
   // 恢复路径应直接创建带 Bearer 的条目，无 OAuth 交互
-  assert.equal(second.created.length, 5);
+  assert.equal(second.created.length, 6);
   for (const entry of second.created) {
     assert.match(entry.config.headers.Authorization, /^Bearer mock-at-/);
   }
@@ -282,6 +282,33 @@ test('激活自动授权：无授权时 apply 自动发起 OAuth（autoConnectOn
   await autoApprove(ctx);
   await waitFor(() => (tableStore.get('grant:test') ? true : null), 'auto-connect grant');
   assert.ok(tableStore.get('grant:test'), '自动授权应写入 grant');
-  assert.equal(created.length, 5, '自动授权应创建 5 个 mcp-client 条目');
+  assert.equal(created.length, 6, '自动授权应创建 6 个 mcp-client 条目');
   assert.ok(logs.some(([, m]) => m.includes('auto-starting OAuth connect')), '应有自动连接日志');
+});
+
+test('个人账号：token 不含 history → 只创建 5 个条目（history 不挂载）', SKIP, async () => {
+  // 独立 mock：token 只授权 5 个（不含 history），模拟个人/未认证账号
+  const personalMock = await createMockQccServer({
+    expiresIn: 3600,
+    tokenResources: ['company', 'risk', 'ipr', 'operation', 'executive'],
+  });
+  const resources = {};
+  for (const key of Object.keys(QCC_RESOURCES)) {
+    resources[key] = `${personalMock.base}/mcp/${key}/stream`;
+  }
+  const personalConfig = { ...config, resources, issuer: personalMock.base };
+  const { ctx, tools, created } = createFakeCtx(new Map());
+  await plugin.apply(ctx, personalConfig);
+
+  const connect = findTool(tools, 'qcc_oauth_connect');
+  const exec = { signal: new AbortController().signal };
+  const promise = connect.execute({}, exec);
+  await autoApprove(ctx);
+  const result = await promise;
+
+  assert.equal(result.ok, true, result.message);
+  assert.equal(result.detail.entries.length, 5);
+  assert.deepEqual(created.map((e) => e.config.serverName).sort(), ['company', 'executive', 'ipr', 'operation', 'risk']);
+  assert.equal(created.some((e) => e.config.serverName === 'history'), false, 'history 不应挂载');
+  await personalMock.close();
 });

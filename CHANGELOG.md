@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.5] - 2026-08
+
+### 变更（开放第 6 个 SERVER：history 历史信息）
+
+- `QCC_RESOURCES` 从 5 个扩到 6 个，新增 `history`（历史信息），对齐官网「6 个 SERVER / 185 工具」口径。
+- **按 token 实际授权动态配置条目**：授权成功后解析 access_token（JWT）的 `resource` claim，
+  与 `resources` 配置求交集，只挂载实际授权的 SERVER —— 企业认证账号 token 含 history（6 个），
+  个人账号不含（5 个），避免把未授权的 history 挂出来却调不通。
+- `provisionEntries` / `disableEntries` 等改为由 `grant.authorizedResources` 反推 serverKey
+  （新增 `grantedServerKeys`），connect/status 文案动态列出实际 SERVER 名。
+
+### 测试
+
+- 新增 `extractTokenResources` 单元测试（JWT 授权范围解析：含/不含 history、非 JWT、无 claim）。
+- 新增「个人账号 token 不含 history → 只建 5 个条目」集成测试（mock 支持 JWT resource claim）。
+- 全部断言由 5 个条目更新为 6 个；35 用例全部通过。
+
 ## [0.1.4] - 2026-08
 
 ### 修复（插件市场收录衔接）

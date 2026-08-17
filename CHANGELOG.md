@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.2] - 2026-08
+
+### 新增
+- `autoConnectOnActivate`（默认开启）：插件激活且无有效授权时自动发起 OAuth 授权（自动打开授权页），安装重启后无需手动触发；可用 `autoConnectOnActivate: false` 关闭。
+
 ## [0.1.1] - 2026-08
 
 ### 变更

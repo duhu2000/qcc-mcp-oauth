@@ -111,6 +111,7 @@ before(async () => {
     requestTimeoutMs: 5000,
     refreshSkewMs: 0,
     openBrowser: false,
+    autoConnectOnActivate: false,
     persistTokens: true,
     mcpEntryPrefix: 'mcp-qcc',
     account: 'test',
@@ -261,4 +262,19 @@ test('重启恢复：storage 中有 grant 时 apply 自动恢复连接（无需�
   }
   // 无新的授权页日志
   assert.equal(second.logs.some(([, m]) => m.includes('opening authorization page:')), false);
+});
+
+test('激活自动授权：无授权时 apply 自动发起 OAuth（autoConnectOnActivate 默认开启）', SKIP, async () => {
+  const { ctx, tools, created, tableStore, logs } = createFakeCtx(new Map());
+  const cfg = {
+    ...config,
+    autoConnectOnActivate: true,
+  };
+  await plugin.apply(ctx, cfg);
+  // 不调用 connect.execute —— 自动连接应已发起
+  await autoApprove(ctx);
+  await waitFor(() => (tableStore.get('grant:test') ? true : null), 'auto-connect grant');
+  assert.ok(tableStore.get('grant:test'), '自动授权应写入 grant');
+  assert.equal(created.length, 5, '自动授权应创建 5 个 mcp-client 条目');
+  assert.ok(logs.some(([, m]) => m.includes('auto-starting OAuth connect')), '应有自动连接日志');
 });

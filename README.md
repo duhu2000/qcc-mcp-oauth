@@ -1,0 +1,122 @@
+# 企查查 MCP OAuth 插件（DeepSeek Harness）
+
+> One-click OAuth connect to [企查查 (Qichacha)](https://www.qcc.com) MCP services inside DeepSeek Harness.
+> 在 DeepSeek Harness 中一键 OAuth 授权接入企查查 MCP 数据（工商 / 风险 / 知产 / 经营 / 董监高）。
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+## 功能 / Features
+
+- 🔑 **一键 OAuth 连接**：`Authorization Code + PKCE(S256)`，动态注册客户端（无 client_secret），自动打开浏览器跳转企查查授权页，loopback 回调自动完成
+- 🌐 **一次授权、全 Server 可用**：一份 `access_token` / `refresh_token` 覆盖企查查 OAuth 集合内全部 MCP Server（company / risk / ipr / operation / executive）
+- 🔄 **自动刷新**：access_token 过期前自动 refresh（token 轮换），失败才需要重新授权
+- 💾 **安全持久化**：token 存储于 DSH 存储域（`~/.dsh/storages`，目录 0700），重启 Host 自动恢复连接
+- 🛠 **对话即管理**：内置 `qcc_oauth_connect` / `qcc_oauth_status` / `qcc_oauth_disconnect` 三个工具
+- 🚪 **一键断开**：调用 OAuth revoke 撤销 refresh_token 并停用 MCP 工具
+
+## 安装 / Install
+
+前置：DeepSeek Harness（`dsh` CLI，web profile），Node ≥ 20。
+
+### 方式 A：npm 安装（推荐）
+
+```bash
+# 1. 安装插件到 profile
+dsh plugin --profile web add qcc-dsh-mcp-oauth
+
+# 2. 注册 bundle（把包名加入 profile package.json 的 dsh.profile.bundles）
+#    ~/.dsh/profiles/web/package.json
+#    "dsh": { "profile": { "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "qcc-dsh-mcp-oauth"] } }
+
+# 3. 重启 dsh web
+```
+
+### 方式 B：GitHub 直装
+
+```bash
+dsh plugin --profile web add github:duhu2000/qcc-mcp-oauth
+# 再按方式 A 第 2、3 步注册 bundle 并重启
+```
+
+### 方式 C：源码 / 本地调试
+
+```bash
+git clone https://github.com/duhu2000/qcc-mcp-oauth.git
+cd qcc-mcp-oauth
+dsh plugin --profile web add "link:$(pwd)"      # 或 pnpm add "file:$(pwd)"
+# 在 profile package.json 的 bundles 中加入本地包名，重启
+```
+
+> 插件包内自带 `cordis.patch.yml`（bundle patch），注册 bundle 后插件行自动合入，无需手改 `cordis.patch.yml`。
+
+## 使用 / Usage
+
+重启后，在对话中输入：
+
+| 你说 | 效果 |
+|---|---|
+| "连接企查查" | 触发 `qcc_oauth_connect`：自动打开浏览器跳转企查查授权页，登录授权后自动完成连接 |
+| "查一下企查查连接状态" | 触发 `qcc_oauth_status`：显示授权状态、token 过期时间、覆盖的 MCP Server |
+| "断开企查查" | 触发 `qcc_oauth_disconnect`：撤销 refresh_token、清除本地授权、停用工具 |
+
+连接成功后，以下工具直接可用（示例）：
+
+- `mcp__qcc-company__get_company_registration_info` / `get_actual_controller` / ...
+- `mcp__qcc-risk__get_company_risk_scan` / `get_dishonest_info` / ...
+- `mcp__qcc-ipr__*`、`mcp__qcc-operation__*`、`mcp__qcc-executive__*`
+
+## 原理 / How it works
+
+严格遵循《企查查MCP OAuth 接入文档》（Authorization Code + PKCE，公开接口版）：
+
+1. 发现 MCP Protected Resource Metadata → 2. 发现 OAuth Server Metadata（endpoint 全部动态读取，不硬编码）
+3. 动态注册客户端（`client_id`，90 天自动续期）→ 4. 打开授权页（`scope=mcp:tools`）
+5. loopback 回调校验 `state` → 6. 授权码 + `code_verifier` 换 token
+7. 通过 `ctx.loader` 为 5 个 `@deepseek-ai/dsh-mcp-client` 条目注入 Bearer header → 8. 过期前自动刷新（轮换）
+
+详见 [`docs/OAUTH-IMPLEMENTATION.md`](docs/OAUTH-IMPLEMENTATION.md)。
+
+## 配置 / Configuration
+
+插件行位于 `~/.dsh/profiles/web/cordis.patch.yml`（bundle 合入后可见）：
+
+```yaml
+- id: qcc-mcp-oauth
+  name: 'qcc-dsh-mcp-oauth'
+  config:
+    issuer: 'https://agent.qcc.com'          # OAuth 授权服务器
+    clientName: 'DeepSeek Harness - QCC MCP' # 授权页展示名
+    refreshSkewMs: 300000                     # 过期前提前刷新（ms）
+    openBrowser: true                         # 自动打开浏览器（false = 仅打印授权 URL）
+    persistTokens: true                       # 持久化 token（false = 仅内存）
+    mcpEntryPrefix: 'mcp-qcc'                 # 受管 mcp-client 条目 id 前缀
+```
+
+## 安全说明 / Security
+
+- token 只写入 `~/.dsh/storages`（0700），**不进入 git、不进入对话历史**
+- 连接期间 `loader` 会把条目配置写回 profile 配置文件（含 token），建议：`chmod 600 ~/.dsh/profiles/web/cordis.yml`；不要把 `~/.dsh` 加入任何仓库
+- Bearer token 仅发送给授权集合内的精确 resource URL
+- 断开时调用 revoke 撤销 refresh_token
+- 如需彻底移除：`qcc_oauth_disconnect` 后从 bundles 移除包名并 `dsh plugin --profile web remove qcc-dsh-mcp-oauth`
+
+## 已知限制 / Limitations
+
+- 企查查 OAuth 集合当前为 5 个 resource（company/risk/ipr/operation/executive）；history / legal-regulation / legal-case / tender 不在文档集合内（如有需要请与企查查确认后扩展 `resources` 配置）
+- 第三方插件无法注册 DSH 设置页卡片（apiproxy allowlist 限制），管理入口为对话工具
+- 回调使用本地 loopback 地址，适用于桌面端；SaaS/Web 回调地址需提前与企查查确认白名单
+
+## 开发 / Development
+
+```bash
+npm install          # 需要 host 依赖时（见 docs/INSTALL.md）
+npm run lint         # 语法检查
+npm test             # 单元 + 集成测试（含 mock OAuth 服务器全流程）
+```
+
+测试覆盖：PKCE、元数据发现、动态注册、完整授权码流程（loopback）、refresh 轮换、revoke、
+插件级集成（连接/幂等/自动刷新/断开/重启恢复）。
+
+## License
+
+MIT

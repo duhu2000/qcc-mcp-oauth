@@ -8,4 +8,5 @@
         issuer: 'https://agent.qcc.com'
         clientName: 'DeepSeek Harness - QCC MCP'
         refreshSkewMs: 300000
+        autoConnectOnActivate: true
         persistTokens: true

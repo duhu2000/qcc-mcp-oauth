@@ -70,7 +70,7 @@ dsh plugin --profile web add "link:$(pwd)"      # 或 pnpm add "file:$(pwd)"
 
 ## 使用 / Usage
 
-重启后，在对话中输入：
+重启后，插件会**自动发起 OAuth 授权**（默认开启，激活且无有效授权时自动打开企查查授权页）；如未自动触发，在对话中输入：
 
 | 你说 | 效果 |
 |---|---|
@@ -107,6 +107,7 @@ dsh plugin --profile web add "link:$(pwd)"      # 或 pnpm add "file:$(pwd)"
     clientName: 'DeepSeek Harness - QCC MCP' # 授权页展示名
     refreshSkewMs: 300000                     # 过期前提前刷新（ms）
     openBrowser: true                         # 自动打开浏览器（false = 仅打印授权 URL）
+    autoConnectOnActivate: true               # 激活且无授权时自动打开授权页（false = 手动触发）
     persistTokens: true                       # 持久化 token（false = 仅内存）
     mcpEntryPrefix: 'mcp-qcc'                 # 受管 mcp-client 条目 id 前缀
 ```

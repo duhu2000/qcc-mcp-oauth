@@ -9,31 +9,20 @@
 ## 方式 A：npm 发布版（推荐给普通用户）
 
 ```bash
-# 1) 安装插件到 profile（pnpm 安装到 ~/.dsh/profiles/web/node_modules）
+# 1) 安装插件到 profile（自动安装依赖并注册 bundle）
 dsh plugin --profile web add qcc-dsh-mcp-oauth
 
-# 2) 注册 bundle：编辑 ~/.dsh/profiles/web/package.json
-#    在 "dsh": { "profile": { "bundles": [...] } } 数组末尾追加 "qcc-dsh-mcp-oauth"
-#    例如：
-#    {
-#      "name": "dsh-profile-web",
-#      "private": true,
-#      "dependencies": {},
-#      "dsh": { "profile": { "bundles": [
-#        "@deepseek-ai/dsh-base",
-#        "@deepseek-ai/dsh-web-app",
-#        "qcc-dsh-mcp-oauth"
-#      ] } }
-#    }
-
-# 3) 重启 dsh web（Ctrl-C 停止后重新运行 dsh web）
+# 2) 重启 dsh web（Ctrl-C 停止后重新运行 dsh web）
+#    注：声明了 dsh.bundle 的包会被 dsh plugin add 自动加入
+#    ~/.dsh/profiles/web/package.json 的 dsh.profile.bundles；若未自动注册，
+#    手动在该数组追加 "qcc-dsh-mcp-oauth"（与 "@deepseek-ai/dsh-base" 等并列）后再重启
 ```
 
 ## 方式 B：GitHub 直装（未发 npm 时）
 
 ```bash
 dsh plugin --profile web add github:duhu2000/qcc-mcp-oauth
-# 再执行方式 A 的第 2、3 步
+# 再执行方式 A 的第 2 步（重启）
 ```
 
 ## 方式 C：本地源码
@@ -42,7 +31,7 @@ dsh plugin --profile web add github:duhu2000/qcc-mcp-oauth
 git clone https://github.com/duhu2000/qcc-mcp-oauth.git
 cd qcc-mcp-oauth
 dsh plugin --profile web add "link:$(pwd)"
-# 再执行方式 A 的第 2、3 步
+# 再执行方式 A 的第 2 步（重启）
 ```
 
 ## 验证安装

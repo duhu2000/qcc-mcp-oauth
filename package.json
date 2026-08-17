@@ -1,7 +1,7 @@
 {
   "name": "qcc-dsh-mcp-oauth",
   "version": "0.1.0",
-  "description": "DeepSeek Harness 插件：一键 OAuth 授权连接企查查（Qichacha）MCP 服务 / One-click OAuth connect to Qichacha MCP services",
+  "description": "DeepSeek Harness \u63d2\u4ef6\uff1a\u4e00\u952e OAuth \u6388\u6743\u8fde\u63a5\u4f01\u67e5\u67e5\uff08Qichacha\uff09MCP \u670d\u52a1 / One-click OAuth connect to Qichacha MCP services",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -11,7 +11,8 @@
     "lib",
     "cordis.patch.yml",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "install.sh"
   ],
   "scripts": {
     "test": "node --test",

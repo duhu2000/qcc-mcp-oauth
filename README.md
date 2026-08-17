@@ -18,7 +18,28 @@
 
 前置：DeepSeek Harness（`dsh` CLI，web profile），Node ≥ 20。
 
-### 方式 A：npm 安装（推荐）
+### 🤖 让 Agent 安装（最省事，推荐给不熟悉命令行的用户）
+
+把下面的链接直接发给你的 DeepSeek Harness 对话（或使用 [dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace) 安装失败后出现的 **「让 Agent 安装」** 按钮）：
+
+```
+帮我安装这个插件 https://github.com/duhu2000/qcc-mcp-oauth
+```
+
+Agent 会按本 README 执行以下命令（你也可以自己跑）：
+
+```bash
+# 方式一：一键脚本（自动安装 + 注册 bundle + 提示重启）
+bash <(curl -fsSL https://raw.githubusercontent.com/duhu2000/qcc-mcp-oauth/main/install.sh)
+
+# 方式二：手动两步
+dsh plugin --profile web add qcc-dsh-mcp-oauth   # 安装依赖并自动注册 bundle
+# 重启 dsh web
+```
+
+> 说明：安装时的 `peer dependencies` 警告可忽略——`@deepseek-ai/*` 等对等依赖由 DSH web profile 自带（host 依赖），无需另行安装；安装完成后**必须重启** dsh web 才能生效。
+
+### 方式 A：npm 安装
 
 ```bash
 # 1. 安装插件到 profile（声明了 dsh.bundle 的包会被 dsh plugin add 自动注册到 bundles）

@@ -1,0 +1,10 @@
+node_modules/
+*.log
+.DS_Store
+.env
+.env.*
+coverage/
+dist/
+*.tgz
+# 绝不提交任何本地凭证/配置（token 只在用户本机 ~/.dsh 下）
+.dsh/

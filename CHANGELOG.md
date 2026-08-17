@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.4] - 2026-08
+
+### 修复（插件市场收录衔接）
+
+- `package.json` 补充 `repository` / `homepage` 字段，指向 GitHub 仓库
+  `duhu2000/qcc-mcp-oauth`。该字段用于 awesome-dsh-plugin 的 npm 探测
+  （`scripts/probe-npm.mjs`）把 npm 包与 GitHub 仓库做反查校验：此前缺少此字段，
+  市场里该条目被判定为「未发布 npm」而回退到 `github:` 源码安装；补上后即可被识别为
+  npm 包 `qcc-dsh-mcp-oauth`，市场一键安装走 npm 预构建，免 `allowBuilds` 构建授权。
+
 ## [0.1.3] - 2026-08
 
 ### 修复（安装/连接实测 + Windows 测试反馈的 5 个 BUG）

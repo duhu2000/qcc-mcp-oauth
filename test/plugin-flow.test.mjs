@@ -60,7 +60,14 @@ function createFakeCtx(tableStore) {
       remove: async (id) => { updated.push([id, { removed: true }]); registry.delete(id); },
       await: async () => {},
     },
-    effect: (fn) => { effects.push(fn); return () => {}; },
+    // 模拟真实 cordis 的 ctx.effect 语义：立即执行回调，回调的返回值才是
+    // fiber 卸载时的清理函数（disposer）。防止 `ctx.effect(() => disposer())`
+    // 这类"立即执行清理"的回归写法通过测试。
+    effect: (fn) => {
+      const disposer = typeof fn === 'function' ? fn() : fn;
+      effects.push(disposer);
+      return () => {};
+    },
   };
   ctx.logs = logs; // 便于测试访问日志
   return { ctx, tools, created, updated, logs, effects, tableStore };

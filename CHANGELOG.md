@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.1.3] - 2026-08
+
+### 修复（安装/连接实测发现的 3 个 BUG）
+
+1. **对话工具注册后立即被卸载**（agent 看不到 `qcc_oauth_connect/status/disconnect`）：
+   `ctx.effect(() => disposerTools())` 中 cordis 会**立即执行**回调，等价于注册瞬间调用卸载函数。
+   改为 `ctx.effect(() => disposerTools)`（返回卸载函数，fiber 卸载时才调用）。
+2. **存储域被立即关闭**（授权成功但 token 不落盘、重启不恢复）：
+   `ctx.effect(() => { domain.close() })` 同样立即执行，导致后续 `store.put/get` 全部抛
+   `DomainError('closed')`。改为返回关闭函数。
+3. **首次授权后 mcp-client 条目不创建**：`provisionEntries` 用 `ctx.loader.resolve(id)` 探测条目
+   存在性，而当前 loader 版本对不存在的条目**抛错**（`cannot resolve entry`）而非返回 undefined。
+   改为非抛错的 `hasEntry()` 探测。
+
+### 测试
+- 插件集成测试的伪上下文 `ctx.effect` 改为模拟真实 cordis 语义（立即执行回调、返回值作为 disposer），
+  使上述回归可被测试捕获。
+
 ## [0.1.2] - 2026-08
 
 ### 新增

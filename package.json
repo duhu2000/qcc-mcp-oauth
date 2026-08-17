@@ -1,0 +1,45 @@
+{
+  "name": "qcc-dsh-mcp-oauth",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness 插件：一键 OAuth 授权连接企查查（Qichacha）MCP 服务 / One-click OAuth connect to Qichacha MCP services",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "lint": "node --check lib/index.js && node --check lib/oauth.js && node --check lib/callback-server.js && node --check lib/grant-store.js && node --check lib/mcp-provision.js && node --check lib/tools.js && node --check lib/constants.js"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "mcp",
+    "qichacha",
+    "qcc",
+    "oauth",
+    "pkce"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-mcp-client": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "cordis": "^4.0.1",
+    "zod": "^4.4.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

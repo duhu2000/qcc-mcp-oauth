@@ -1,0 +1,11 @@
+# 企查查 MCP OAuth 插件（DSH Bundle patch）
+# 作为 bundle 被合入 profile 时，自动插入本插件行。
+# 插件本身负责 OAuth 授权、token 存储与动态配置 mcp-client 条目。
+- insert:
+    - id: qcc-mcp-oauth
+      name: 'qcc-dsh-mcp-oauth'
+      config:
+        issuer: 'https://agent.qcc.com'
+        clientName: 'DeepSeek Harness - QCC MCP'
+        refreshSkewMs: 300000
+        persistTokens: true

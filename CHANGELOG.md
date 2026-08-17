@@ -2,7 +2,7 @@
 
 ## [0.1.3] - 2026-08
 
-### 修复（安装/连接实测发现的 3 个 BUG）
+### 修复（安装/连接实测 + Windows 测试反馈的 5 个 BUG）
 
 1. **对话工具注册后立即被卸载**（agent 看不到 `qcc_oauth_connect/status/disconnect`）：
    `ctx.effect(() => disposerTools())` 中 cordis 会**立即执行**回调，等价于注册瞬间调用卸载函数。
@@ -13,10 +13,18 @@
 3. **首次授权后 mcp-client 条目不创建**：`provisionEntries` 用 `ctx.loader.resolve(id)` 探测条目
    存在性，而当前 loader 版本对不存在的条目**抛错**（`cannot resolve entry`）而非返回 undefined。
    改为非抛错的 `hasEntry()` 探测。
+4. **插件永远停留在 loading、自动刷新不调度**：`provisionEntries` 末尾的 `ctx.loader.await()` 会
+   等待包括插件自身在内的所有条目 fiber 完成，而当前 `apply()` 正运行在自身 fiber 内，形成**自死锁**。
+   移除 `loader.await()`（新建条目在后台加载，无需阻塞插件）。
+5. **Windows 打开授权页丢失全部查询参数**：`cmd /c start` 把 URL 中未加引号的 `&` 当作命令分隔符，
+   浏览器只打开第一个 `&` 之前的部分。改为 `start "" "<url>"` 并用 `windowsVerbatimArguments: true`
+   原样传递引号（整条 URL 置于一对引号内）。
 
 ### 测试
 - 插件集成测试的伪上下文 `ctx.effect` 改为模拟真实 cordis 语义（立即执行回调、返回值作为 disposer），
   使上述回归可被测试捕获。
+- 新增 `util.test.mjs`：跨平台浏览器打开命令构建（重点覆盖 Windows `&` 保护与 verbatim 参数）。
+- 30 个用例全部通过。
 
 ## [0.1.2] - 2026-08
 

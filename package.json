@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "test": "node --test",
-    "lint": "node --check lib/index.js && node --check lib/oauth.js && node --check lib/callback-server.js && node --check lib/grant-store.js && node --check lib/mcp-provision.js && node --check lib/tools.js && node --check lib/constants.js"
+    "lint": "node --check lib/index.js && node --check lib/oauth.js && node --check lib/callback-server.js && node --check lib/grant-store.js && node --check lib/mcp-provision.js && node --check lib/tools.js && node --check lib/util.js && node --check lib/constants.js"
   },
   "keywords": [
     "deepseek-harness",

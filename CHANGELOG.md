@@ -5,6 +5,7 @@
 首个可运行版本。
 
 ### 新增
+- 支持「让 Agent 安装」：一键安装脚本 `install.sh` + README 安装指引（含 dsh-plugin-marketplace 兜底按钮场景）
 - 一键 OAuth 授权连接企查查 MCP（Authorization Code + PKCE S256，动态注册客户端，无 client_secret）
 - 一次授权覆盖企查查 OAuth 集合全部 MCP Server（company / risk / ipr / operation / executive）
 - loopback 回调（127.0.0.1 随机端口），state 校验，code 单次使用

@@ -21,21 +21,19 @@
 ### 方式 A：npm 安装（推荐）
 
 ```bash
-# 1. 安装插件到 profile
+# 1. 安装插件到 profile（声明了 dsh.bundle 的包会被 dsh plugin add 自动注册到 bundles）
 dsh plugin --profile web add qcc-dsh-mcp-oauth
 
-# 2. 注册 bundle（把包名加入 profile package.json 的 dsh.profile.bundles）
-#    ~/.dsh/profiles/web/package.json
-#    "dsh": { "profile": { "bundles": ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "qcc-dsh-mcp-oauth"] } }
-
-# 3. 重启 dsh web
+# 2. 重启 dsh web
 ```
+> 若未自动注册：手动在 ~/.dsh/profiles/web/package.json 的 `dsh.profile.bundles` 追加
+> `"qcc-dsh-mcp-oauth"`（与 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 并列），再重启。
 
 ### 方式 B：GitHub 直装
 
 ```bash
 dsh plugin --profile web add github:duhu2000/qcc-mcp-oauth
-# 再按方式 A 第 2、3 步注册 bundle 并重启
+# 再重启 dsh web
 ```
 
 ### 方式 C：源码 / 本地调试
@@ -44,10 +42,10 @@ dsh plugin --profile web add github:duhu2000/qcc-mcp-oauth
 git clone https://github.com/duhu2000/qcc-mcp-oauth.git
 cd qcc-mcp-oauth
 dsh plugin --profile web add "link:$(pwd)"      # 或 pnpm add "file:$(pwd)"
-# 在 profile package.json 的 bundles 中加入本地包名，重启
+# 再重启 dsh web
 ```
 
-> 插件包内自带 `cordis.patch.yml`（bundle patch），注册 bundle 后插件行自动合入，无需手改 `cordis.patch.yml`。
+> 插件包内自带 `cordis.patch.yml`（bundle patch）；`dsh plugin add` 自动完成依赖安装与 bundles 注册，插件行自动合入，无需手改任何文件。
 
 ## 使用 / Usage
 

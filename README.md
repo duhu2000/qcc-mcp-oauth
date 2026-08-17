@@ -104,13 +104,15 @@ dsh plugin --profile web add "link:$(pwd)"      # 或 pnpm add "file:$(pwd)"
   name: 'qcc-dsh-mcp-oauth'
   config:
     issuer: 'https://agent.qcc.com'          # OAuth 授权服务器
-    clientName: 'DeepSeek Harness - QCC MCP' # 授权页展示名
+    clientName: 'DeepSeek Harness - QCC MCP' # OAuth 客户端名（授权页展示 + 后台品牌识别依据）
     refreshSkewMs: 300000                     # 过期前提前刷新（ms）
     openBrowser: true                         # 自动打开浏览器（false = 仅打印授权 URL）
     autoConnectOnActivate: true               # 激活且无授权时自动打开授权页（false = 手动触发）
     persistTokens: true                       # 持久化 token（false = 仅内存）
     mcpEntryPrefix: 'mcp-qcc'                 # 受管 mcp-client 条目 id 前缀
 ```
+
+> **关于 `clientName`**：它是 OAuth 协议的 `client_name`，会被企查查写入 access_token 的 `client_name` claim，用于**后台看板品牌识别**（企查查侧将名称去除空格/连字符/下划线并转小写后，按 `deepseekharness*` 前缀归一为激活来源 `deepseekharness`）。默认值 `DeepSeek Harness - QCC MCP` 已命中该前缀。如需自定义，请**保持 `DeepSeek Harness` 前缀**，否则后台会归入「其他（未注册）」、无法正确统计品牌激活。
 
 ## 安全说明 / Security
 

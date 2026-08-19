@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.7] - 2026-08-19
+
+### 变更
+
+- README 安装指引统一为推荐市场 **dshmarket**（人工精选 + PR 守门审核）；`dsh-plugin-marketplace` 的「让 Agent 安装」兜底按钮措辞改为通用「把链接发给 Agent」，不再绑定非官方社区市场。
+
+## [0.1.6] - 2026-08-19
+
+### 修复
+
+- `output.render` 由返回字符串改为返回 content 块数组（`[{ type: 'text', text }]`），修复工具调用时报 `content.some is not a function`（DSH 工具契约要求 render 返回块数组）。新增回归用例。
+
 ## [0.1.5] - 2026-08
 
 ### 变更（开放第 6 个 SERVER：history 历史信息）

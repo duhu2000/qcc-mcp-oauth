@@ -20,7 +20,7 @@
 
 ### 🤖 让 Agent 安装（最省事，推荐给不熟悉命令行的用户）
 
-把下面的链接直接发给你的 DeepSeek Harness 对话（或使用 [dsh-plugin-marketplace](https://github.com/AwesomeHou/dsh-plugin-marketplace) 安装失败后出现的 **「让 Agent 安装」** 按钮）：
+把下面的链接直接发给你的 DeepSeek Harness 对话（推荐先在 [dshmarket](https://www.npmjs.com/package/dshmarket) 插件市场搜索「企查查」一键安装；市场直装失败时，同样把链接发给 Agent 即可代为安装）：
 
 ```
 帮我安装这个插件 https://github.com/duhu2000/qcc-mcp-oauth

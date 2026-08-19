@@ -1,6 +1,6 @@
 {
   "name": "qcc-dsh-mcp-oauth",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "DeepSeek Harness 插件：一键 OAuth 授权连接企查查（Qichacha）MCP 服务 / One-click OAuth connect to Qichacha MCP services",
   "type": "module",
   "main": "lib/index.js",

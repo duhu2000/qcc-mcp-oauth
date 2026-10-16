@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -27,12 +28,9 @@ jobs:
         run: node --input-type=module -e "await import('./lib/index.js')"
       - run: npm run lint
       - run: npm test
-      # 发布到 npm（需在仓库 Secrets 配置 NPM_TOKEN；未配置时自动跳过，仅发 GitHub Release）
+      # 通过 npm Trusted Publishing（OIDC）发布，无需长期 NPM_TOKEN。
       - name: Publish to npm
-        if: startsWith(github.ref, 'refs/tags/v') && env.NODE_AUTH_TOKEN != ''
         run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       # 生成 GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

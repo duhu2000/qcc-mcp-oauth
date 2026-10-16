@@ -11,10 +11,20 @@ jobs:
     strategy:
       matrix:
         node: [20, 22, 24]
+        dsh: [0.1.0-rc.6, 0.2.0-rc.2]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      - name: Install host dependencies
+        run: >-
+          npm install --no-save --package-lock=false --legacy-peer-deps --ignore-scripts
+          @deepseek-ai/dsh-storage-domain@${{ matrix.dsh }}
+          @deepseek-ai/dsh-storage@${{ matrix.dsh }}
+          @deepseek-ai/cordis@4.0.4
+          @deepseek-ai/schemastery@3.18.4 zod@4.4.3
+      - name: Verify host dependencies load
+        run: node --input-type=module -e "await import('./lib/index.js')"
       - run: npm run lint
       - run: npm test

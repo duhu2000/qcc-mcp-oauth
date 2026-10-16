@@ -13,10 +13,13 @@ let plugin;
 let defineQccGrantDomain;
 let grantRecordSchema;
 let buildGrant;
+let GrantStore;
+let DomainFacility;
 
 try {
   plugin = await import('../lib/index.js');
-  ({ defineQccGrantDomain, grantRecordSchema, buildGrant } = await import('../lib/grant-store.js'));
+  ({ defineQccGrantDomain, grantRecordSchema, buildGrant, GrantStore } = await import('../lib/grant-store.js'));
+  ({ DomainFacility } = await import('@deepseek-ai/dsh-storage-domain'));
 } catch (error) {
   // host 依赖（@deepseek-ai/schemastery / dsh-storage-domain / zod）不可用时跳过
   plugin = null;
@@ -32,6 +35,65 @@ function skipIfNoDeps() {
 }
 
 if (!skipIfNoDeps()) {
+  test('GrantStore uses the public table accessor without reading private tables', async () => {
+    const records = new Map();
+    const table = {
+      get: (key) => records.get(key),
+      put: async (key, value) => { records.set(key, value); },
+      delete: async (key) => records.delete(key),
+      entries: () => records.entries(),
+    };
+    const store = new GrantStore({
+      table(name) {
+        assert.equal(name, 'grants');
+        return table;
+      },
+      get tables() { throw new Error('tables is private'); },
+    });
+    await store.put({ accessToken: 'test-token' }, 'test');
+    assert.equal((await store.get('test')).accessToken, 'test-token');
+    assert.equal((await store.entries()).length, 1);
+    await store.delete('test');
+    assert.equal(await store.get('test'), undefined);
+  });
+
+  test('GrantStore retains support for the legacy tables map', async () => {
+    const table = { get: () => ({ accessToken: 'legacy-token' }) };
+    const store = new GrantStore({ tables: new Map([['grants', table]]) });
+    assert.equal((await store.get()).accessToken, 'legacy-token');
+  });
+
+  test('GrantStore persists and restores grants through the installed DSH domain implementation', async (t) => {
+    const snapshot = { tables: { grants: {} }, global: null };
+    const backend = { kv: { open: async () => ({
+      loadAll: async () => structuredClone(snapshot),
+      putRecord: async (table, key, value) => { snapshot.tables[table][key] = structuredClone(value); },
+      deleteRecord: async (table, key) => { delete snapshot.tables[table][key]; },
+      close: async () => {},
+    }) } };
+    const ctx = {
+      storage: { backend: { get: () => backend } },
+      emit: () => {},
+      logger: { warn: () => {}, error: () => {} },
+    };
+    const facility = new DomainFacility(ctx, { backend: 'test' });
+    t.after(() => facility.closeAll());
+    const domain = await facility.open(defineQccGrantDomain());
+    const grant = buildGrant({
+      issuer: 'https://agent.qcc.com', clientId: 'test-client', scope: 'mcp:tools',
+      token: { accessToken: 'test-token', refreshToken: 'test-refresh', expiresIn: 3600 },
+      authorizedResources: ['https://agent.qcc.com/mcp/company/stream'],
+      entryResource: 'https://agent.qcc.com/mcp/company/stream', clientName: 'DSH test',
+    });
+    await new GrantStore(domain).put(grant);
+    await domain.close();
+    const restored = new GrantStore(await facility.open(defineQccGrantDomain()));
+    assert.deepEqual(await restored.get(), grant);
+    await restored.delete();
+    assert.equal(await restored.get(), undefined);
+    assert.deepEqual(snapshot.tables.grants, {});
+  });
+
   test('插件导出契约', () => {
     assert.equal(typeof plugin.name, 'string');
     assert.ok(Array.isArray(plugin.inject));

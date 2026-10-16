@@ -58,6 +58,24 @@ dsh plugin --profile web remove qcc-dsh-mcp-oauth
 
 ## 常见问题
 
+### 提示与 DSH 0.2.0-rc.2 不兼容？
+
+插件 0.1.7 及更早版本声明的 `@deepseek-ai/dsh-mcp-client` 范围为 `^0.1.0-rc.6`，不包含 `0.2.0-rc.2`。0.1.8 已扩展兼容声明，存储表也改用两版均支持的公开接口 `domain.table()`。
+
+当 npm 已发布 0.1.8 后，安装修复版并重启 DSH：
+
+```bash
+dsh plugin --profile web add qcc-dsh-mcp-oauth@0.1.8
+```
+
+发布前可在包含此修复的源码目录安装本地版本：
+
+```bash
+dsh plugin --profile web add "file:$(pwd)"
+```
+
+PowerShell 对应命令为 `dsh plugin --profile web add "file:$((Get-Location).Path)"`。如果使用 Desktop，将 `--profile web` 改为 `--profile desktop`，安装前完全退出 Desktop，安装后重新打开。
+
 ### 安装后工具不出现？
 1. 确认 `dsh plugin --profile web add` 成功（profile node_modules 里有 `qcc-dsh-mcp-oauth`）；
 2. 确认 `package.json` 的 `bundles` 包含包名；

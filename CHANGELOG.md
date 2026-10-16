@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.8] - 未发布
+
+### 修复
+
+- 扩展 `@deepseek-ai/dsh-mcp-client` 对等依赖范围，支持 DSH 0.2.0-rc.2，并保留 0.1.0-rc.6 系列兼容。
+- 存储表改用 DSH 0.1 / 0.2 均支持的公开接口 `domain.table('grants')`，并保留基于 `tables` Map 的句柄兼容。
+- 补齐实际导入的 `@deepseek-ai/dsh-storage-domain` 对等依赖，将 `cordis` 更正为 DSH 使用的 `@deepseek-ai/cordis`。
+- 补充新旧存储接口回归测试及 DSH 新旧版本 CI 测试矩阵，更新不兼容报错的安装指引。
+
 ## [0.1.7] - 2026-08-19
 
 ### 变更

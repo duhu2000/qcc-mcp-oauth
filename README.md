@@ -16,7 +16,7 @@
 
 ## 安装 / Install
 
-前置：DeepSeek Harness（`dsh` CLI，web profile），Node ≥ 20。
+前置：DeepSeek Harness（`dsh` CLI，web profile），Node ≥ 20。插件 0.1.8 起支持 DSH 0.2.0-rc.2，并保留 DSH 0.1.0-rc.6 系列兼容。
 
 ### 🤖 让 Agent 安装（最省事，推荐给不熟悉命令行的用户）
 
@@ -37,7 +37,7 @@ dsh plugin --profile web add qcc-dsh-mcp-oauth   # 安装依赖并自动注册 b
 # 重启 dsh web
 ```
 
-> 说明：安装时的 `peer dependencies` 警告可忽略——`@deepseek-ai/*` 等对等依赖由 DSH web profile 自带（host 依赖），无需另行安装；安装完成后**必须重启** dsh web 才能生效。
+> 说明：`@deepseek-ai/*` 等对等依赖由 DSH web profile 提供，无需另行安装。若 DSH 提示版本不兼容，应升级到匹配的插件版本（见 [安装指南](docs/INSTALL.md#提示与-dsh-020-rc2-不兼容)）；安装完成后**必须重启** dsh web 才能生效。
 
 ### 方式 A：npm 安装
 

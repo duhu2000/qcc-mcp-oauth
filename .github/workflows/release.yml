@@ -16,6 +16,15 @@ jobs:
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
+      - name: Install host dependencies
+        run: >-
+          npm install --no-save --package-lock=false --legacy-peer-deps --ignore-scripts
+          @deepseek-ai/dsh-storage-domain@0.2.0-rc.2
+          @deepseek-ai/dsh-storage@0.2.0-rc.2
+          @deepseek-ai/cordis@4.0.4
+          @deepseek-ai/schemastery@3.18.4 zod@4.4.3
+      - name: Verify host dependencies load
+        run: node --input-type=module -e "await import('./lib/index.js')"
       - run: npm run lint
       - run: npm test
       # 发布到 npm（需在仓库 Secrets 配置 NPM_TOKEN；未配置时自动跳过，仅发 GitHub Release）

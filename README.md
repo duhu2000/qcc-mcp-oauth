@@ -140,6 +140,22 @@ npm test             # 单元 + 集成测试（含 mock OAuth 服务器全流程
 测试覆盖：PKCE、元数据发现、动态注册、完整授权码流程（loopback）、refresh 轮换、revoke、
 插件级集成（连接/幂等/自动刷新/断开/重启恢复）。
 
+## 双插件共存时的不兼容警告
+
+企业版包名是 `qcc-dsh-mcp-oauth`，法律版包名是 `qcc-dsh-mcp-legal-oauth`。两者是独立插件；安装其中一个不会升级另一个。
+
+如果安装法律版 0.1.5 后，警告点名的是 `qcc-dsh-mcp-oauth@0.1.7`，应先排查 profile 中的旧企业版，而不是据此认定法律版依赖声明错误。企业版 0.1.7 的 mcp-client 范围为 `^0.1.0-rc.6`；已发布的企业版 0.1.8 为 `^0.1.0-rc.6 || ^0.2.0-rc.2`，法律版 0.1.5 为 `^0.2.0-rc.2`（2026-11-09 核对 npm）。
+
+如果需要继续使用企业版，先停止对应 DSH 实例，在原 profile 升级，再重启：
+
+```bash
+dsh plugin --profile web add qcc-dsh-mcp-oauth@0.1.8
+```
+
+不要用 `allow-version --accept-risk` 代替修复，也不要为了排障删除授权存储。上述建议不代表 DSH 0.2.1-rc.5 Windows OAuth 全流程已通过验收；预发布版本是否匹配还取决于宿主的版本检查规则，不能把 semver 范围检查当成功能验收。
+
+如升级后仍失败，请在 [法律插件 Issue #3](https://github.com/duhu2000/qcc-mcp-legal-oauth/issues/3) 提供 DSH/Node/操作系统版本、警告点名的包名和版本、使用的 profile 名称，以及是否能发现 `qcc_legal_oauth_status`。仅提供脱敏错误片段；不要上传完整 profile、token、Key、cookie 或授权回调 URL。
+
 ## License
 
 MIT
